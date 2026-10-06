@@ -20,7 +20,7 @@ struct FilesTab: View {
         // written against; on iOS 15 the stack is rendered by hand from the
         // same `path` binding, and appending to it is the push on both.
         HuskNavPathStack(path: $router.files) {
-            DirectoryView(path: Self.root, title: "Files")
+            DirectoryView(path: Self.root, title: "文件")
         } leaf: { path in
             DirectoryView(path: path,
                           title: (path as NSString).lastPathComponent,
@@ -63,17 +63,17 @@ struct DirectoryView: View {
         .huskFilePicker(isPresented: $importing) { urls in
             host.sendFiles(urls, to: path)
         }
-        .confirmationDialog("Install \(installing?.name ?? "")?",
+        .confirmationDialog("安装 \(installing?.name ?? "")？",
                             isPresented: Binding(get: { installing != nil },
                                                  set: { if !$0 { installing = nil } }),
                             titleVisibility: .visible) {
-            Button("Install") {
+            Button("安装") {
                 if let apk = installing { host.installFromGuest(apk.path, name: apk.name) }
                 installing = nil
             }
-            Button("Cancel", role: .cancel) { installing = nil }
+            Button("取消", role: .cancel) { installing = nil }
         } message: {
-            Text("Android installs it from where it already is — nothing is copied.")
+            Text("Android 会从它原本的位置安装——不会复制。")
         }
         .task(id: path) { load() }
         .refreshable { load() }
@@ -103,13 +103,13 @@ struct DirectoryView: View {
                 if loading && entries.isEmpty {
                     ProgressView().tint(Theme.accent).padding(.top, 60)
                 } else if let failure {
-                    EmptyState(title: "Cannot read this folder",
+                    EmptyState(title: "无法读取这个文件夹",
                                message: failure, systemImage: "lock")
                 } else if entries.isEmpty {
-                    EmptyState(title: "Empty",
-                               message: "Nothing is in this folder yet.",
+                    EmptyState(title: "空文件夹",
+                               message: "这个文件夹里还没有东西。",
                                systemImage: "folder",
-                               actionTitle: "Import files",
+                               actionTitle: "导入文件",
                                action: { showImportSheet = true })
                 } else {
                     RowGroup {
@@ -153,7 +153,7 @@ struct DirectoryView: View {
     private func storage(_ s: (free: Int64, total: Int64)) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Storage")
+                Text("存储空间")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.text)
                 Spacer()
@@ -255,11 +255,11 @@ struct ImportSheet: View {
                     Image(systemName: "doc.badge.plus")
                         .font(.system(size: 30, weight: .light))
                         .foregroundStyle(Theme.textDim)
-                    Text("Tap to import")
+                    Text("点按导入")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Theme.text)
-                    Text("Goes to \((destination as NSString).lastPathComponent). "
-                       + "Unmodified APKs install from here too.")
+                    Text("将发送到 \((destination as NSString).lastPathComponent)。"
+                       + "未修改的 APK 也可以从这里直接安装。")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.textDim)
                         .multilineTextAlignment(.center)
@@ -274,7 +274,7 @@ struct ImportSheet: View {
                 .contentShape(Rectangle())
                 .onTapGesture { onBrowse() }
 
-                Button("Browse files", action: onBrowse)
+                Button("浏览文件", action: onBrowse)
                     .buttonStyle(PrimaryButtonStyle())
                 Spacer(minLength: 0)
             }

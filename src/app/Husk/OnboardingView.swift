@@ -110,10 +110,10 @@ struct OnboardingView: View {
                     .shadow(color: Theme.accent.opacity(0.35), radius: 22, y: 10)
             }
             Text("Husk").font(.system(size: 40, weight: .semibold, design: .rounded))
-            Text("Android apps, on your iPhone.")
+            Text("Android 应用，运行在你的 iPhone 上。")
                 .font(.title3).foregroundStyle(.secondary)
-            Text("Husk runs a real Android system and opens APKs inside it. "
-               + "A few questions first — all of them can be changed later in Settings.")
+            Text("Husk 运行一个真实的 Android 系统并在其中打开 APK。"
+               + "先回答几个问题——之后都可以在设置中更改。")
                 .font(.callout).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 34).padding(.top, 4)
@@ -124,28 +124,24 @@ struct OnboardingView: View {
     private var choices: some View {
         ScrollView {
             VStack(spacing: 14) {
-                Text("How should Husk behave?")
+                Text("希望 Husk 怎么运行？")
                     .font(.title2.weight(.semibold))
                     .padding(.top, 34).padding(.bottom, 6)
 
-                choice(icon: "bolt.fill", title: "Start Android on launch",
-                       detail: "Boots the guest as soon as Husk opens, once JIT is "
-                             + "available. Off means you start it yourself.",
+                choice(icon: "bolt.fill", title: "启动时自动开启 Android",
+                       detail: "JIT 可用时，Husk 一打开就启动客户机。关闭则需要你自己启动。",
                        isOn: $autoStart)
 
-                choice(icon: "rectangle.landscape.rotate", title: "Landscape screen",
-                       detail: "Gives Android a landscape screen, which games fill "
-                             + "properly. Portrait apps get letterboxed instead.",
+                choice(icon: "rectangle.landscape.rotate", title: "横屏屏幕",
+                       detail: "给 Android 一个横屏屏幕，游戏能正确填满。竖屏应用则会被信箱化。",
                        isOn: $landscape)
 
-                choice(icon: "speaker.wave.2.fill", title: "Sound",
-                       detail: "Adds a sound device. Android cannot be saved while "
-                             + "this is on, so every launch boots from cold.",
+                choice(icon: "speaker.wave.2.fill", title: "声音",
+                       detail: "添加一个声音设备。它开启时 Android 无法保存，所以每次启动都是冷启动。",
                        isOn: $sound)
 
-                choice(icon: "externaldrive.badge.checkmark", title: "Save automatically",
-                       detail: "Saves the machine once Android settles, so later "
-                             + "launches restore in seconds instead of booting.",
+                choice(icon: "externaldrive.badge.checkmark", title: "自动保存",
+                       detail: "Android 稳定后保存机器，之后的启动几秒内恢复，而不是重新启动。",
                        isOn: $autoSave)
             }
             .padding(.horizontal, 20).padding(.bottom, 20)
@@ -175,12 +171,12 @@ struct OnboardingView: View {
 
     /// What the JIT page says is already in place, if anything.
     private var jitState: String? {
-        if JITBootstrap.debuggedFlag { return "JIT is on." }
-        if jit.method == .stikDebug { return "Husk will use StikDebug." }
-        if jit.method == .trollStore { return "Husk will use TrollStore." }
+        if JITBootstrap.debuggedFlag { return "JIT 已打开。" }
+        if jit.method == .stikDebug { return "Husk 将使用 StikDebug。" }
+        if jit.method == .trollStore { return "Husk 将使用 TrollStore。" }
         switch jit.pairingSource {
-        case .onDevice: return "Paired on this device."
-        case .imported: return "Pairing file imported."
+        case .onDevice: return "已在此设备配对。"
+        case .imported: return "配对文件已导入。"
         case nil: return nil
         }
     }
@@ -191,10 +187,10 @@ struct OnboardingView: View {
             Image(systemName: "bolt.fill")
                 .font(.system(size: 54))
                 .foregroundStyle(Theme.accent)
-            Text("Turn on JIT").font(.largeTitle.weight(.semibold))
-            Text("Android needs JIT, which on iOS only an attached debugger can grant. "
-               + "Husk can be that debugger itself: on iOS 27 it pairs with this iPhone "
-               + "from Settings, no computer needed. StikDebug works too.")
+            Text("打开 JIT").font(.largeTitle.weight(.semibold))
+            Text("Android 需要 JIT，在 iOS 上只有附加的调试器能授予。"
+               + "Husk 可以自己成为那个调试器：在 iOS 27 上它可以从设置"
+               + "与这台 iPhone 配对，无需电脑。StikDebug 也可以。")
                 .font(.callout).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 34)
@@ -202,7 +198,7 @@ struct OnboardingView: View {
                 Label(state, systemImage: "checkmark.circle.fill")
                     .font(.callout.weight(.medium)).foregroundStyle(.green)
             }
-            Button(jitState == nil ? "Set up JIT now" : "Change JIT setup") { settingUpJIT = true }
+            Button(jitState == nil ? "现在设置 JIT" : "更改 JIT 设置") { settingUpJIT = true }
                 .font(.body.weight(.semibold))
                 .foregroundStyle(Theme.accent)
                 .padding(.top, 4)
@@ -216,10 +212,9 @@ struct OnboardingView: View {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 62))
                 .foregroundStyle(Theme.accent)
-            Text("Ready").font(.largeTitle.weight(.semibold))
-            Text("If JIT is not on when Android starts, Husk turns it on with the "
-               + "method you chose, or walks you through setting one up. You can "
-               + "change it any time in Settings › JIT & sideload.")
+            Text("就绪").font(.largeTitle.weight(.semibold))
+            Text("如果 Android 启动时 JIT 没有打开，Husk 会用你选择的方法打开它，"
+               + "或带你设置一个。你随时可以在 设置 › JIT 与侧载 中更改。")
                 .font(.callout).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 34)

@@ -83,7 +83,7 @@ struct HuskNavPathStack<Dest: Hashable, Root: View, Leaf: View>: View {
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.trailing, 18).padding(.top, 10)
-                                .accessibilityLabel("Close")
+                                .accessibilityLabel("关闭")
                             }
                         }
                 }

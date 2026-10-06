@@ -29,18 +29,18 @@ struct BootScreen: View {
     /// looking at the screen, and the jokes should not repeat before the
     /// information does.
     private static let phrases = [
-        "Prepare for awesomeness",
-        "Waking Android up",
-        "Teaching an iPhone to speak Android",
-        "This is a whole operating system — be patient",
-        "App by Levi",
-        "Star the repo if you like this sort of thing",
-        "Translating arm64, one block at a time",
-        "No, it has not frozen",
-        "Unpacking the guest",
-        "Almost worth the wait",
-        "Negotiating with the JIT",
-        "Nearly there",
+        "准备见证精彩",
+        "正在唤醒 Android",
+        "正在教一台 iPhone 说 Android",
+        "这是一个完整的操作系统——请耐心",
+        "由 Levi 制作",
+        "喜欢就给仓库点个星",
+        "正在翻译 arm64，一次一块",
+        "不，它没有卡死",
+        "正在解包客户机",
+        "等待几乎值得了",
+        "正在与 JIT 协商",
+        "快到了",
     ]
 
     var body: some View {
@@ -93,7 +93,7 @@ struct BootScreen: View {
                 // An escape hatch, but not an invitation: it turns up only once
                 // waiting has stopped being novel.
                 if now.timeIntervalSince(began) > 8 {
-                    Button("Use Husk while it starts", action: onSkip)
+                    Button("启动时也可以先用 Husk", action: onSkip)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Theme.textDim)
                         .padding(.top, 14)
@@ -123,7 +123,7 @@ struct BootScreen: View {
             .frame(height: 5)
 
             HStack {
-                Text(shown > 0 ? "\(shown)%" : "starting")
+                Text(shown > 0 ? "\(shown)%" : "启动中")
                     .font(.technical(12, weight: .medium))
                     .foregroundStyle(Theme.accent)
                 Spacer()
@@ -164,8 +164,8 @@ struct BootScreen: View {
         // for ten minutes, so show elapsed time instead.
         if done >= 58, !QemuRunner.didRestore {
             let mins = Int(now.timeIntervalSince(QemuRunner.bootStarted) / 60)
-            return mins < 1 ? "first boot takes 5–15 min"
-                            : "\(mins) min · first boot takes 5–15 min"
+            return mins < 1 ? "首次启动需要 5–15 分钟"
+                            : "\(mins) 分钟 · 首次启动需要 5–15 分钟"
         }
         guard done >= 8, done <= 92 else { return nil }
         let elapsed = now.timeIntervalSince(began)
@@ -175,8 +175,8 @@ struct BootScreen: View {
         guard left > 2, left < 15 * 60 else { return nil }
         if left < 90 {
             let rounded = Int((left / 5).rounded()) * 5
-            return "about \(max(rounded, 5)) seconds remaining"
+            return "约 \(max(rounded, 5)) 秒后完成"
         }
-        return "about \(Int((left / 60).rounded())) minutes remaining"
+        return "约 \(Int((left / 60).rounded())) 分钟后完成"
     }
 }

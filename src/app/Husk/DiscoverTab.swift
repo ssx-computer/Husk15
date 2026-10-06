@@ -16,21 +16,21 @@ struct DiscoverTab: View {
                 Theme.backdrop
 
                 if manager.isLoading && manager.sources.isEmpty {
-                    ProgressView("Fetching Repositories...")
+                    ProgressView("正在获取仓库…")
                         .foregroundStyle(Theme.textDim)
                 } else if manager.sources.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "tray.fill")
                             .font(.system(size: 48))
                             .foregroundStyle(Theme.textDim)
-                        Text("No Repositories")
+                        Text("没有仓库")
                             .font(.headline).foregroundStyle(Theme.text)
-                        Text("Add a source to start discovering apps.")
+                        Text("添加一个源，开始发现应用。")
                             .foregroundStyle(Theme.textDim).multilineTextAlignment(.center)
                         Button {
                             showingAddSource = true
                         } label: {
-                            Label("Add Source", systemImage: "plus.circle.fill")
+                            Label("添加源", systemImage: "plus.circle.fill")
                         }
                         .buttonStyle(.borderedProminent)
                     }
@@ -50,8 +50,8 @@ struct DiscoverTab: View {
                     }
                 }
             }
-            .navigationTitle("Discover")
-            .searchable(text: $searchText, prompt: "Search \(totalAppCount) apps...")
+            .navigationTitle("发现")
+            .searchable(text: $searchText, prompt: "搜索 \(totalAppCount) 个应用…")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 14) {
@@ -96,10 +96,10 @@ struct DiscoverTab: View {
                     Button { showingSources = true } label: {
                         HStack(spacing: 6) {
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(source?.name ?? (isLoading ? "Loading..." : "Failed"))
+                                Text(source?.name ?? (isLoading ? "加载中..." : "失败"))
                                     .font(.subheadline.bold())
                                     .foregroundStyle(hasError ? .red : Theme.text)
-                                Text(isLoading ? "Fetching..." : "\(source?.apps.count ?? 0) apps")
+                                Text(isLoading ? "获取中..." : "\(source?.apps.count ?? 0) 个应用")
                                     .font(.caption2)
                                     .foregroundStyle(Theme.textDim)
                             }
@@ -112,7 +112,7 @@ struct DiscoverTab: View {
                     .buttonStyle(.plain)
                 }
                 Button { showingAddSource = true } label: {
-                    Label("Add Source", systemImage: "plus")
+                    Label("添加源", systemImage: "plus")
                         .font(.subheadline.bold())
                         .foregroundStyle(.blue)
                         .padding(.horizontal, 14).padding(.vertical, 10)
@@ -147,7 +147,7 @@ struct DiscoverTab: View {
             }
 
             if debouncedSearchText.isEmpty && apps.count > 50 {
-                Text("Search to see \(apps.count - 50) more apps...")
+                Text("搜索以查看其余 \(apps.count - 50) 个应用…")
                     .font(.footnote).foregroundStyle(Theme.textDim)
                     .frame(maxWidth: .infinity, alignment: .center).padding(.bottom, 4)
             }
@@ -183,7 +183,7 @@ struct DiscoverTab: View {
             let progress = manager.downloadProgress[app.bundleIdentifier]
 
             if isInstalled {
-                Button("OPEN") {
+                Button("打开") {
                     let intent = "am start -n \(app.bundleIdentifier)/\(app.bundleIdentifier).MainActivity"
                     _ = try? GuestBridge.shared.shell(intent, timeout: 5)
                 }
@@ -200,7 +200,7 @@ struct DiscoverTab: View {
                     Image(systemName: "stop.fill").font(.system(size: 10)).foregroundStyle(Theme.textDim)
                 }
             } else {
-                Button("GET") { manager.downloadAndInstall(app: app) }
+                Button("获取") { manager.downloadAndInstall(app: app) }
                     .font(.subheadline.bold())
                     .padding(.horizontal, 16).padding(.vertical, 8)
                     .background(Color.blue.opacity(0.2)).foregroundStyle(.blue)
@@ -215,17 +215,17 @@ struct DiscoverTab: View {
         HuskNavStack {
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Source URL")
+                    Text("源地址")
                         .font(.headline).foregroundStyle(Theme.text)
                     TextField("https://f-droid.org/repo/index-v1.json", text: $newSourceURL)
                         .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                         .padding().background(Theme.surfaceHigh).cornerRadius(12)
-                    Text("Paste any F-Droid-compatible repository index URL.")
+                    Text("粘贴任何兼容 F-Droid 的仓库索引地址。")
                         .font(.caption).foregroundStyle(Theme.textDim)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Presets")
+                    Text("预设")
                         .font(.headline).foregroundStyle(Theme.text)
                     ForEach([
                         ("F-Droid", "https://f-droid.org/repo/index-v1.json"),
@@ -253,10 +253,10 @@ struct DiscoverTab: View {
             }
             .padding()
             .background(Theme.backdrop.ignoresSafeArea())
-            .navigationTitle("Add Source")
+            .navigationTitle("添加源")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { newSourceURL = ""; showingAddSource = false }
+                    Button("取消") { newSourceURL = ""; showingAddSource = false }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     // Text.bold() rather than View.bold(): the view form is iOS
@@ -268,7 +268,7 @@ struct DiscoverTab: View {
                         guard !url.isEmpty, URL(string: url) != nil else { return }
                         Task { await manager.addSource(urlString: url) }
                     } label: {
-                        Text("Add").bold()
+                        Text("添加").bold()
                     }
                     .disabled(newSourceURL.isEmpty)
                 }
@@ -281,7 +281,7 @@ struct DiscoverTab: View {
     private var sourcesSheet: some View {
         HuskNavStack {
             List {
-                Section("Active Repositories") {
+                Section("活跃仓库") {
                     ForEach(manager.sourceURLs, id: \.self) { url in
                         VStack(alignment: .leading, spacing: 2) {
                             if let source = manager.sources.first(where: { $0.identifier == url }) {
@@ -295,10 +295,10 @@ struct DiscoverTab: View {
                     .onDelete { manager.sourceURLs.remove(atOffsets: $0) }
                 }
             }
-            .navigationTitle("Repositories")
+            .navigationTitle("仓库")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") { showingSources = false }
+                    Button("完成") { showingSources = false }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { showingSources = false; showingAddSource = true } label: {

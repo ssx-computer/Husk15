@@ -91,24 +91,23 @@ struct LibraryTab: View {
                             .contextMenu {
                                 Button {
                                     host.launch(app.name) { onOpenGuest() }
-                                } label: { Label("Launch", systemImage: "play.fill") }
+                                } label: { Label("启动", systemImage: "play.fill") }
                                 .disabled(!host.isReady || host.busy != nil)
                                 Button {
                                     router.library.append(app)
-                                } label: { Label("Details", systemImage: "info.circle") }
+                                } label: { Label("详细信息", systemImage: "info.circle") }
                             }
                         }
                     }
                 } else if !query.isEmpty {
-                    EmptyState(title: "No matches",
-                               message: "Nothing installed is called “\(query)”.",
+                    EmptyState(title: "没有匹配的应用",
+                               message: "已安装的应用里没有叫\u{201C}\(query)\u{201D}的。",
                                systemImage: "magnifyingglass")
                 } else if host.packages.isEmpty && host.isReady {
-                    EmptyState(title: "No apps yet",
-                               message: "Install an APK and it appears here. Split sets "
-                                      + "work too — pick every piece at once.",
+                    EmptyState(title: "还没有应用",
+                               message: "安装一个 APK，它就会出现在这里。Split 集合也支持——一次选齐所有分卷。",
                                systemImage: "square.grid.2x2",
-                               actionTitle: "Install APK(s)",
+                               actionTitle: "安装 APK",
                                action: { importing = true })
                 }
             }
@@ -123,7 +122,7 @@ struct LibraryTab: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Theme.textDim)
-            TextField("Search apps", text: $query)
+            TextField("搜索应用", text: $query)
                 .focused($searchFocused)
                 .foregroundStyle(Theme.text)
                 .autocorrectionDisabled()
@@ -155,7 +154,7 @@ struct LibraryTab: View {
                 }
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text(started ? "Starting Android" : "Android is not running")
+                Text(started ? "正在启动 Android" : "Android 没有在运行")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Theme.text)
                 if started, runner.bootProgress > 0 {
@@ -165,15 +164,15 @@ struct LibraryTab: View {
                 } else {
                     Text(started ? host.status
                                  : JITBootstrap.isDebuggerAttached
-                                   ? "Your apps are here; start it to open them."
-                                   : "Husk needs JIT, which only a debugger can grant.")
+                                   ? "你的应用都在这里；启动它即可打开。"
+                                   : "Husk 需要 JIT，而只有调试器能授予它。")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.textDim)
                         .lineLimit(1)
                 }
             }
             Spacer(minLength: 6)
-            Button(started ? "Show" : JITBootstrap.isDebuggerAttached ? "Start" : "JIT") {
+            Button(started ? "显示" : JITBootstrap.isDebuggerAttached ? "启动" : "JIT") {
                 if started { onOpenGuest() } else { onStartAndroid() }
             }
             .font(.system(size: 13, weight: .semibold))

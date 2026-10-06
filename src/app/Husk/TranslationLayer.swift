@@ -74,11 +74,11 @@ extension TLReport {
         guard runsOnNativeRuntime else { return summary }
         let flagged = libraries.filter { $0.abi == "arm64-v8a" && $0.status != "ok" }.count
         let total = libraries.filter { $0.abi == "arm64-v8a" }.count
-        var text = "A \(nativeEngineName) game. It runs through Husk's native runtime, which loads its \(total) arm64 libraries itself."
-        if nativeEngine == .cocos || nativeEngine == .minecraft || nativeEngine == .sdl { text += " It is a landscape game: Husk turns the screen for it." }
+        var text = "一个 \(nativeEngineName) 游戏。它通过 Husk 的原生运行时运行，运行时会自行加载它的 \(total) 个 arm64 库。"
+        if nativeEngine == .cocos || nativeEngine == .minecraft || nativeEngine == .sdl { text += " 这是横屏游戏：Husk 会为它旋转屏幕。" }
         if flagged > 0 {
-            text += " \(flagged) of them use tricks the older loader could not handle; the native runtime handles those too, "
-                  + "except for optional anti-tamper code, which it leaves out."
+            text += " 其中 \(flagged) 个使用了旧加载器无法处理的技巧；原生运行时也能处理，"
+                  + "除了可选的反篡改代码——那部分会被跳过。"
         }
         return text
     }
@@ -277,7 +277,7 @@ final class TranslationLayerStore: ObservableObject {
         } catch {
             try? fm.removeItem(at: dir)
             HuskLog.log("tl", "FAILED to add: \(error.localizedDescription)")
-            return "Husk could not copy it: \(error.localizedDescription)"
+            return "Husk 无法复制它：\(error.localizedDescription)"
         }
 
         let apks = ((try? fm.contentsOfDirectory(atPath: dir.path)) ?? [])
@@ -369,24 +369,24 @@ struct TranslationLayerSettings: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Android Translation Layer", isOn: $enabled)
+                Toggle("Android 翻译层", isOn: $enabled)
                     .onChange(of: enabled) { v in
                         UserDefaults.standard.set(v, forKey: TranslationLayer.enabledKey)
                         HuskLog.log("ui", v ? "translation layer on" : "translation layer off")
                     }
             } header: {
-                Text("Experimental")
+                Text("实验性")
             } footer: {
                 if !devInfo {
-                    Text("Runs some Android apps, such as Unity, cocos2d-x and SDL games, straight on your iPhone without starting "
-                       + "Android. Experimental, and it needs JIT turned on.")
+                    Text("运行一些 Android 应用，例如 Unity、cocos2d-x 和 SDL 游戏，无需启动 Android"
+                       + "就能直接运行在你的 iPhone 上。实验性，且需要打开 JIT。")
                 } else {
-                Text("Runs an app's own code directly, against a rewrite of Android's "
-                   + "framework, instead of booting a whole Android system -- the "
-                   + "approach of Android Translation Layer on Linux, rebuilt for iOS. "
-                   + "It can run Unity, cocos2d-x and SDL games (experimental) and reports what other apps "
-                   + "would need, and checks this iPhone for what the design depends on. "
-                   + "Android itself is unaffected either way.")
+                Text("直接运行应用自己的代码，对上的是重写的 Android 框架，"
+                   + "而不是启动整个 Android 系统——这是 Linux 上 Android 翻译层"
+                   + "的做法，为 iOS 重建。"
+                   + "它能运行 Unity、cocos2d-x 和 SDL 游戏（实验性），并报告其他应用"
+                   + "需要什么，也检查这台 iPhone 是否具备设计所依赖的条件。"
+                   + "无论哪种方式 Android 本体都不受影响。")
                 }
             }
 
@@ -399,17 +399,17 @@ struct TranslationLayerSettings: View {
             }
         }
         .huskForm()
-        .navigationTitle("Translation Layer")
+        .navigationTitle("翻译层")
         .huskFilePicker(isPresented: $importing) { urls in
             HuskLog.log("ui", "translation layer: adding \(urls.count) file(s): "
                       + urls.map(\.lastPathComponent).joined(separator: ", "))
             store.add(urls)
         }
         .onAppear { store.adoptDroppedAPKs() }
-        .alert("Could not add the app", isPresented: Binding(
+        .alert("无法添加应用", isPresented: Binding(
                 get: { store.lastError != nil },
                 set: { if !$0 { store.lastError = nil } })) {
-            Button("OK", role: .cancel) { store.lastError = nil }
+            Button("确定", role: .cancel) { store.lastError = nil }
         } message: {
             Text(store.lastError ?? "")
         }
@@ -433,15 +433,15 @@ struct TranslationLayerSettings: View {
             Button {
                 importing = true
             } label: {
-                Label("Add APK", systemImage: "plus")
+                Label("添加 APK", systemImage: "plus")
             }
             .disabled(store.busy != nil)
         } header: {
-            Text("Apps")
+            Text("应用")
         } footer: {
-            Text("Husk keeps its own copy, apart from Android's. Pick a base APK and "
-               + "its split pieces together to add them as one app; an .xapk, .apkm or .apks "
-               + "bundle is unpacked for you.")
+            Text("Husk 把它自己的副本和 Android 的分开保存。选一个基础 APK"
+               + "和它的分卷一起添加为同一个应用；.xapk、.apkm 或 .apks"
+               + "bundle 会自动解包。")
         }
     }
 
@@ -470,26 +470,26 @@ struct TranslationLayerSettings: View {
             }
             .disabled(store.checking)
         } header: {
-            Text("This iPhone")
+            Text("这台 iPhone")
         } footer: {
-            Text("Android's native code expects things of the processor and of memory "
-               + "that only the phone can answer -- above all, whether a library's code "
-               + "can run with its data writable right beside it. Enable JIT first, or "
-               + "the memory checks are skipped. The results go to the console too.")
+            Text("Android 的原生代码对处理器和内存有要求，只有手机本身"
+               + "能回答——最重要的是，库的代码能否在数据可写的旁边运行。"
+               + "先打开 JIT，否则内存检查会被跳过。"
+               + "结果也会输出到控制台。")
         }
     }
 
     private var progressSection: some View {
         Section {
-            DetailRow(label: "App reports", value: "working", mono: false)
-            DetailRow(label: "Device checks", value: "working", mono: false)
-            DetailRow(label: "Library loader", value: "working", mono: false)
-            DetailRow(label: "Android runtime", value: "Unity, cocos2d-x games", mono: false)
-            DetailRow(label: "Opening apps", value: "Unity, cocos2d-x games (experimental)", mono: false)
+            DetailRow(label: "应用报告", value: "工作中", mono: false)
+            DetailRow(label: "设备检查", value: "工作中", mono: false)
+            DetailRow(label: "库加载器", value: "工作中", mono: false)
+            DetailRow(label: "Android 运行时", value: "Unity、cocos2d-x 游戏", mono: false)
+            DetailRow(label: "打开应用", value: "Unity、cocos2d-x 游戏（实验性）", mono: false)
         } header: {
-            Text("Where it stands")
+            Text("当前进度")
         } footer: {
-            Text("The plan, in order, is docs/04-translation-layer.md in Husk's source.")
+            Text("按顺序的计划在 Husk 源码的 docs/04-translation-layer.md。")
         }
     }
 }
@@ -509,7 +509,7 @@ struct TLVerdict {
         case "native"?:         title = "Native code, maps cleanly";    tint = Theme.good
         case "nativeWithWork"?: title = "Native code, needs work";      tint = .orange
         case "noArm64"?:        title = "No arm64 code";                tint = .red
-        case "unreadable"?:     title = "Could not be read";            tint = .red
+        case "unreadable"?:     title = "无法读取";            tint = .red
         default:                title = "Not scanned";                  tint = Theme.textDim
         }
     }
@@ -521,7 +521,7 @@ struct TLPlainStatus {
     let tint: Color
 
     init(_ report: TLReport?) {
-        if report?.runsOnNativeRuntime == true { title = "Ready to run"; tint = Theme.good }
+        if report?.runsOnNativeRuntime == true { title = "可以运行"; tint = Theme.good }
         else { title = "Experimental"; tint = Theme.textDim }
     }
 }
@@ -601,7 +601,7 @@ struct TLAppReportView: View {
                     showAttempt = true
                 } label: {
                     HStack {
-                        Label("Run Translation Layer Attempt", systemImage: "play.circle.fill")
+                        Label("运行翻译层尝试", systemImage: "play.circle.fill")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(Theme.accent)
                         Spacer()
@@ -612,24 +612,24 @@ struct TLAppReportView: View {
                 }
             } footer: {
                 if devInfo {
-                    Text("Loads arm64 native code into JIT memory on Apple Silicon and drives "
+                    Text("把 arm64 原生代码载入 Apple Silicon 的 JIT 内存，并驱动"
                        + "a NativeActivity lifecycle. Apps with Java/Dex require ART (milestone 2).")
                 } else {
-                    Text("Turn on JIT first. Close the game with Close at the top.")
+                    Text("先打开 JIT。用顶部的关闭按钮关闭游戏。")
                 }
             }
 
             if devInfo, let report = app.report {
                 Section {
                     if let engine = report.engine {
-                        DetailRow(label: "Made with", value: engine, mono: false)
+                        DetailRow(label: "基于", value: engine, mono: false)
                     }
                     DetailRow(label: "Dex", value: dex(report), mono: false)
                     DetailRow(label: "ABIs", value: report.abis.isEmpty
                               ? "none" : report.abis.joined(separator: ", "))
-                    DetailRow(label: "APKs", value: "\(app.apks.count)", mono: false)
+                    DetailRow(label: "APK", value: "\(app.apks.count)", mono: false)
                 } header: {
-                    Text("What it is")
+                    Text("它是什么")
                 }
 
                 if !report.systemLibraries.isEmpty {
@@ -639,9 +639,9 @@ struct TLAppReportView: View {
                             .foregroundStyle(Theme.text)
                             .textSelection(.enabled)
                     } header: {
-                        Text("Android libraries it needs")
+                        Text("需要的 Android 库")
                     } footer: {
-                        Text("Its own libraries link against these, and it does not "
+                        Text("应用自己的库会链接到这些库，它没有"
                            + "carry them. Each is something the translation layer has "
                            + "to provide.")
                     }
@@ -658,22 +658,22 @@ struct TLAppReportView: View {
 
             Section {
                 Button(role: .destructive) { confirmRemove = true } label: {
-                    Label("Remove", systemImage: "trash")
+                    Label("移除", systemImage: "trash")
                 }
             } footer: {
-                Text("Deletes Husk's copy of the APKs. Anything installed in Android is "
+                Text("删除 Husk 自己的 APK 副本。已经安装进 Android 的"
                    + "untouched.")
             }
         }
         .huskForm()
         .navigationTitle(app.label)
-        .confirmationDialog("Remove \(app.label)?", isPresented: $confirmRemove,
+        .confirmationDialog("移除 \(app.label)？", isPresented: $confirmRemove,
                             titleVisibility: .visible) {
-            Button("Remove", role: .destructive) {
+            Button("移除", role: .destructive) {
                 store.remove(app)
                 dismiss()
             }
-            Button("Cancel", role: .cancel) { }
+            Button("取消", role: .cancel) { }
         }
         // A native-runtime game is swiped, and a sheet takes a swipe down for itself: it goes full screen.
         .sheet(isPresented: Binding(get: { showAttempt && app.report?.runsOnNativeRuntime != true },
@@ -698,8 +698,8 @@ private struct TLLibraryRows: View {
 
     private var statusTitle: String {
         switch lib.status {
-        case "ok":      return "Maps as it is"
-        case "work":    return "Needs loader work"
+        case "ok":      return "直接映射"
+        case "work":    return "需要加载器处理"
         default:        return "Cannot load"
         }
     }
@@ -734,19 +734,19 @@ private struct TLLibraryRows: View {
             DetailRow(label: "16 KiB pages", value: layout)
         }
         if let relocations = lib.relocations {
-            DetailRow(label: "Relocations", value: relocationText(relocations))
+            DetailRow(label: "重定位", value: relocationText(relocations))
         }
         if let imports = lib.imports {
-            DetailRow(label: "Imported symbols", value: "\(imports)")
+            DetailRow(label: "导入符号", value: "\(imports)")
         }
         if let svc = lib.svc, svc > 0 {
-            DetailRow(label: "System calls", value: "\(svc)")
+            DetailRow(label: "系统调用", value: "\(svc)")
         }
         if let reads = lib.tpidrReads {
-            DetailRow(label: "Thread register reads", value: "\(reads)")
+            DetailRow(label: "线程寄存器读取", value: "\(reads)")
         }
         if lib.tls == true {
-            DetailRow(label: "Thread-local storage", value: "yes", mono: false)
+            DetailRow(label: "线程本地存储", value: "是", mono: false)
         }
     }
 }
@@ -910,13 +910,13 @@ struct TLClassicAttemptView: View {
                     }
                     Spacer()
                     if runner.isRunning {
-                        Button("Stop") {
+                        Button("停止") {
                             runner.stop()
                         }
                         .buttonStyle(.bordered)
                         .tint(.red)
                     } else {
-                        Button("Rerun") {
+                        Button("重新运行") {
                             runner.start(apks: app.apks)
                         }
                         .buttonStyle(.borderedProminent)
@@ -947,7 +947,7 @@ struct TLClassicAttemptView: View {
                             Image(systemName: showLog ? "chevron.down" : "chevron.right")
                                 .font(.system(size: 11, weight: .bold))
                                 .frame(width: 12)
-                            Text("ATTEMPT LOG")
+                            Text("尝试日志")
                                 .font(.technical(11, weight: .bold))
                         }
                         .foregroundStyle(Theme.textDim)
@@ -958,11 +958,11 @@ struct TLClassicAttemptView: View {
                         Button {
                             UIPasteboard.general.string = runner.logText
                         } label: {
-                            Label("Copy", systemImage: "doc.on.doc")
+                            Label("复制", systemImage: "doc.on.doc")
                                 .font(.system(size: 12))
                         }
                     } else {
-                        Text("tap to show")
+                        Text("点按显示")
                             .font(.system(size: 11))
                             .foregroundStyle(Theme.textDim.opacity(0.7))
                     }
@@ -979,7 +979,7 @@ struct TLClassicAttemptView: View {
                 if showLog {
                     ScrollViewReader { proxy in
                         ScrollView {
-                            Text(runner.logText.isEmpty ? "Starting attempt..." : runner.logText)
+                            Text(runner.logText.isEmpty ? "正在启动尝试..." : runner.logText)
                                 .font(.technical(11))
                                 .foregroundStyle(Theme.text)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -999,7 +999,7 @@ struct TLClassicAttemptView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
+                    Button("关闭") {
                         runner.stop()
                         dismiss()
                     }

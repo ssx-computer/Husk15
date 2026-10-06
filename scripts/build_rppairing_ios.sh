@@ -7,8 +7,8 @@
 # Dependencies come from crates.io at the versions in Cargo.lock (idevice is
 # MIT, jkcoxson/idevice). Their licence notices are regenerated into
 # src/app/Husk/Resources/legal/LICENSES-rppairing-crates.txt, which the app
-# bundles. Needs rustup with the aarch64-apple-ios target
-# (`rustup target add aarch64-apple-ios`) and python3.
+# bundles. Needs rustup (the iOS target below is added here if missing)
+# and python3.
 set -euo pipefail
 
 HUSK_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -17,6 +17,14 @@ OUT="$HUSK_ROOT/build/ios-arm64/lib"
 TARGET=aarch64-apple-ios
 # Match the app's deployment target (15.0), or the linker warns on every object.
 export IPHONEOS_DEPLOYMENT_TARGET=15.0
+
+# A fresh rustup has only the host's target, and the crate cannot build
+# without the iOS one -- "can't find crate for `core`". Idempotent: already
+# installed, this is a no-op.
+if ! rustup target list --installed 2>/dev/null | grep -qx "$TARGET"; then
+    echo "-> installing rust target $TARGET"
+    rustup target add "$TARGET"
+fi
 
 cd "$CRATE"
 cargo build --release --locked --target "$TARGET"

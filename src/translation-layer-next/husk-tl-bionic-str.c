@@ -234,6 +234,7 @@ static int b_fputs(const char *str, void *f)
     if (is_log_stream(s)) { console_write(s, str, strlen(str)); return 1; }
     TL_ERRNO_BEGIN(); int r = fputs(str, s); TL_ERRNO_END(); return r;
 }
+static int b_putchar(int c) { char ch = (char)c; console_write(stdout, &ch, 1); return c & 0xff; }
 static int b_puts(const char *str) { console_write(stdout, str, strlen(str)); console_write(stdout, "\n", 1); return 1; }
 static size_t b_wcsftime(wchar_t *buf, size_t n, const wchar_t *fmt, const struct tm *tm) { return wcsftime(buf, n, fmt, tm); }
 static int b_putc(int c, void *f) { return b_fputc(c, f); }
@@ -516,7 +517,7 @@ const tl_bionic_entry tl_tab_str[] = {
     TL_DIRECT(memchr), TL_DIRECT(memcmp), TL_DIRECT(memcpy), TL_DIRECT(memmove), TL_DIRECT(memset),
     TL_WRAP("memrchr", b_memrchr), TL_DIRECT(strcasecmp), TL_DIRECT(strcasestr), TL_DIRECT(strcat),
     TL_DIRECT(strchr), TL_DIRECT(strcmp), TL_DIRECT(strcoll), TL_DIRECT(strcoll_l), TL_DIRECT(strcpy),
-    TL_DIRECT(strcspn), TL_DIRECT(strdup), TL_DIRECT(strlcpy), TL_DIRECT(strlen), TL_DIRECT(strncmp),
+    TL_DIRECT(strcspn), TL_DIRECT(strdup), TL_DIRECT(strlcpy), TL_DIRECT(strlcat), TL_DIRECT(strlen), TL_DIRECT(strncmp),
     TL_DIRECT(strncpy), TL_DIRECT(strnlen), TL_DIRECT(strpbrk), TL_DIRECT(strrchr), TL_DIRECT(strspn),
     TL_DIRECT(strstr), TL_DIRECT(strtok_r), TL_DIRECT(strxfrm), TL_DIRECT(strxfrm_l),
     TL_WRAP("strerror", b_strerror), TL_WRAP("strerror_r", b_strerror_r), TL_WRAP("strsignal", b_strsignal),
@@ -530,7 +531,7 @@ const tl_bionic_entry tl_tab_str[] = {
     TL_DIRECT(isxdigit_l), TL_DIRECT(tolower_l), TL_DIRECT(toupper_l),
     TL_DIRECT(isspace), TL_DIRECT(isprint), TL_DIRECT(isgraph), TL_DIRECT(iscntrl), TL_DIRECT(ispunct), TL_DIRECT(isblank),
     TL_DIRECT(iswctype), TL_DIRECT(wctype), TL_DIRECT(strncasecmp), TL_DIRECT(strtok), TL_DIRECT(atof),
-    TL_DIRECT(iswalpha), TL_DIRECT(iswblank), TL_DIRECT(iswcntrl), TL_DIRECT(iswdigit), TL_DIRECT(iswlower),
+    TL_DIRECT(iswalpha), TL_DIRECT(iswalnum), TL_DIRECT(iswblank), TL_DIRECT(iswcntrl), TL_DIRECT(iswdigit), TL_DIRECT(iswlower),
     TL_DIRECT(iswprint), TL_DIRECT(iswpunct), TL_DIRECT(iswspace), TL_DIRECT(iswupper), TL_DIRECT(iswxdigit),
     TL_DIRECT(iswalpha_l), TL_DIRECT(iswblank_l), TL_DIRECT(iswcntrl_l), TL_DIRECT(iswdigit_l), TL_DIRECT(iswlower_l),
     TL_DIRECT(iswprint_l), TL_DIRECT(iswpunct_l), TL_DIRECT(iswspace_l), TL_DIRECT(iswupper_l), TL_DIRECT(iswxdigit_l),
@@ -540,6 +541,8 @@ const tl_bionic_entry tl_tab_str[] = {
     TL_WRAP("mbrtowc", b_mbrtowc), TL_WRAP("mbrlen", b_mbrlen), TL_WRAP("mbtowc", b_mbtowc), TL_WRAP("wcrtomb", b_wcrtomb),
     TL_WRAP("mbsnrtowcs", b_mbsnrtowcs), TL_WRAP("mbsrtowcs", b_mbsrtowcs), TL_WRAP("wcsnrtombs", b_wcsnrtombs),
     TL_WRAP("btowc", b_btowc), TL_WRAP("wctob", b_wctob),
+    TL_DIRECT(wcschr), TL_DIRECT(wcsrchr), TL_DIRECT(wcscpy), TL_DIRECT(wcsncpy), TL_DIRECT(wcscat), TL_DIRECT(wcsncat), TL_DIRECT(wcscmp), TL_DIRECT(wcsncmp),
+    TL_DIRECT(wcsstr), TL_DIRECT(wcsspn), TL_DIRECT(wcscspn), TL_DIRECT(wcspbrk), TL_DIRECT(wcsdup), TL_DIRECT(wcsnlen),
     TL_DIRECT(wcslen), TL_DIRECT(wmemchr), TL_DIRECT(wmemcmp), TL_DIRECT(wmemcpy), TL_DIRECT(wmemmove), TL_DIRECT(wmemset),
     TL_DIRECT(wcscoll), TL_DIRECT(wcscoll_l), TL_DIRECT(wcsxfrm), TL_DIRECT(wcsxfrm_l),
     TL_DIRECT(wcstod), TL_DIRECT(wcstof), TL_DIRECT(wcstol), TL_DIRECT(wcstoll), TL_DIRECT(wcstoul), TL_DIRECT(wcstoull),
@@ -576,7 +579,7 @@ const tl_bionic_entry tl_tab_str[] = {
     TL_WRAP("fopen", b_fopen), TL_WRAP("fdopen", b_fdopen), TL_WRAP("fclose", b_fclose), TL_WRAP("fgets", b_fgets),
     TL_WRAP("fread", b_fread), TL_WRAP("fwrite", b_fwrite), TL_WRAP("fseek", b_fseek), TL_WRAP("fseeko", b_fseeko),
     TL_WRAP("ftell", b_ftell), TL_WRAP("ftello", b_ftello), TL_WRAP("fflush", b_fflush), TL_WRAP("fputc", b_fputc),
-    TL_WRAP("putc", b_putc), TL_WRAP("getc", b_getc), TL_WRAP("ungetc", b_ungetc), TL_WRAP("getwc", b_getwc),
+    TL_WRAP("putc", b_putc), TL_WRAP("getc", b_getc), TL_WRAP("fgetc", b_getc), TL_WRAP("ungetc", b_ungetc), TL_WRAP("getwc", b_getwc),
     TL_WRAP("putwc", b_putwc), TL_WRAP("ungetwc", b_ungetwc), TL_WRAP("vsprintf", b_vsprintf), TL_WRAP("wcsftime", b_wcsftime),
     TL_WRAP("fputs", b_fputs), TL_WRAP("puts", b_puts), TL_WRAP("feof", b_feof), TL_WRAP("ferror", b_ferror),
     TL_WRAP("clearerr", b_clearerr), TL_WRAP("fileno", b_fileno), TL_WRAP("setbuf", b_setbuf), TL_WRAP("setvbuf", b_setvbuf),
@@ -593,6 +596,8 @@ const tl_bionic_entry tl_tab_str[] = {
 static char *b___strcpy_chk(char *d, const char *s, size_t dl) { size_t n = strlen(s); if (n >= dl) chk_fail("__strcpy_chk"); memcpy(d, s, n + 1); return d; }
 static char *b___strcat_chk(char *d, const char *s, size_t dl) { size_t a = strlen(d), n = strlen(s); if (a + n >= dl) chk_fail("__strcat_chk"); memcpy(d + a, s, n + 1); return d; }
 static char *b___strncpy_chk(char *d, const char *s, size_t n, size_t dl) { if (n > dl) chk_fail("__strncpy_chk"); return strncpy(d, s, n); }
+static size_t b___strlcat_chk(char *d, const char *s, size_t n, size_t dl) { if (n > dl) chk_fail("__strlcat_chk"); return strlcat(d, s, n); }
+static char *b___stpcpy_chk(char *d, const char *s, size_t dl) { size_t n = strlen(s); if (n + 1 > dl) chk_fail("__stpcpy_chk"); return stpcpy(d, s); }
 static size_t b___strlcpy_chk(char *d, const char *s, size_t n, size_t dl) { if (n > dl) chk_fail("__strlcpy_chk"); return strlcpy(d, s, n); }
 static char *b___strrchr_chk(const char *s, int c, size_t len) { (void)len; return strrchr(s, c); }
 static char *b___fgets_chk(char *buf, int size, size_t bufsize, void *f) { if ((size_t)size > bufsize) chk_fail("__fgets_chk"); return b_fgets(buf, size, f); }
@@ -611,14 +616,14 @@ static size_t b_wcsrtombs(char *dst, const wchar_t **src, size_t len, void *ps) 
 
 const tl_bionic_entry tl_tab_str2[] = {
     TL_WRAP("__strcpy_chk", b___strcpy_chk), TL_WRAP("__strcat_chk", b___strcat_chk), TL_WRAP("__strncpy_chk", b___strncpy_chk),
-    TL_WRAP("__strlcpy_chk", b___strlcpy_chk), TL_WRAP("__strrchr_chk", b___strrchr_chk), TL_WRAP("__fgets_chk", b___fgets_chk),
+    TL_WRAP("__stpcpy_chk", b___stpcpy_chk), TL_WRAP("putchar", b_putchar), TL_WRAP("__strlcpy_chk", b___strlcpy_chk), TL_WRAP("__strlcat_chk", b___strlcat_chk), TL_WRAP("__strrchr_chk", b___strrchr_chk), TL_WRAP("__fgets_chk", b___fgets_chk),
     TL_WRAP("__FD_CLR_chk", b___FD_CLR_chk),
     TL_DATA("stdin", &g_stdin_var), TL_DATA("stdout", &g_stdout_var), TL_DATA("stderr", &g_stderr_var),
     TL_WRAP("perror", b_perror), TL_WRAP("rewind", b_rewind), TL_WRAP("fputwc", b_fputwc), TL_WRAP("popen", b_popen), TL_WRAP("pclose", b_pclose),
     TL_WRAP("tmpfile", b_tmpfile), TL_WRAP("wcsrtombs", b_wcsrtombs),
     TL_DIRECT(strncat), TL_DIRECT(strptime), TL_DIRECT(ldiv), TL_DIRECT(sleep), TL_DIRECT(pause), TL_DIRECT(arc4random_buf), TL_DIRECT(nan), TL_DIRECT(nanf),
     TL_DIRECT(ceil), TL_DIRECT(floor), TL_DIRECT(fabs), TL_DIRECT(trunc), TL_DIRECT(cbrt), TL_DIRECT(acosh), TL_DIRECT(atanh), TL_DIRECT(cosh),
-    TL_DIRECT(sinh), TL_DIRECT(exp2), TL_DIRECT(expm1), TL_DIRECT(log1p), TL_DIRECT(hypotf), TL_DIRECT(ilogbf), TL_DIRECT(nextafter),
+    TL_DIRECT(sinh), TL_DIRECT(sinhf), TL_DIRECT(scalbnf), TL_DIRECT(mbstowcs), TL_DIRECT(wcstombs), TL_DIRECT(exp2), TL_DIRECT(expm1), TL_DIRECT(log1p), TL_DIRECT(hypotf), TL_DIRECT(ilogbf), TL_DIRECT(nextafter),
     TL_DIRECT(nextafterf), TL_DIRECT(frexpf), TL_DIRECT(if_indextoname),
     TL_END
 };

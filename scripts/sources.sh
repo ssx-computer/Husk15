@@ -14,9 +14,14 @@
 QEMU_SRC="https://github.com/utmapp/qemu/releases/download/v10.0.12-utm/qemu-10.0.12-utm.tar.xz"
 
 # Hard requirements for system-mode QEMU.
+# libiconv and gettext come from kernel.org's GNU mirror, not ftp.gnu.org:
+# the GNU server rate-limits bursty traffic and has been refusing whole
+# connections from CI runners (and elsewhere) outright, and a fetch_sources.sh
+# run cannot succeed without both of these. mirrors.kernel.org is a full GNU
+# mirror on a global CDN and answers in seconds.
 FFI_SRC="https://github.com/libffi/libffi/releases/download/v3.5.0/libffi-3.5.0.tar.gz"
-ICONV_SRC="https://ftp.gnu.org/gnu/libiconv/libiconv-1.16.tar.gz"
-GETTEXT_SRC="https://ftp.gnu.org/gnu/gettext/gettext-0.22.5.tar.gz"
+ICONV_SRC="https://mirrors.kernel.org/gnu/libiconv/libiconv-1.16.tar.gz"
+GETTEXT_SRC="https://mirrors.kernel.org/gnu/gettext/gettext-0.22.5.tar.gz"
 GLIB_SRC="https://download.gnome.org/sources/glib/2.83/glib-2.83.0.tar.xz"
 PIXMAN_SRC="https://www.cairographics.org/releases/pixman-0.38.0.tar.gz"
 

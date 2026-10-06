@@ -178,26 +178,41 @@ final class SourceManager: ObservableObject {
         downloadProgress[app.bundleIdentifier] = 0.01
         HuskLog.log("sources", "Downloading \(app.name)")
 
-        let task = URLSession.shared.downloadTask(with: url) { localURL, _, error in
-            Task { @MainActor in
-                self.downloadProgress.removeValue(forKey: app.bundleIdentifier)
-                guard let localURL, error == nil else {
-                    HuskLog.log("sources", "Download failed: \(String(describing: error))")
-                    return
+        // Chunked and parallel, the way the guest image downloads: an APK can
+        // be tens of megabytes, and one stream is both slower and more
+        // fragile than sixteen.
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let downloadDir = docs.appendingPathComponent("Downloaded_APKs")
+        try? FileManager.default.createDirectory(at: downloadDir, withIntermediateDirectories: true, attributes: nil)
+        let dest = downloadDir.appendingPathComponent("\(app.bundleIdentifier)-\(app.version).apk")
+        let staged = FileManager.default.temporaryDirectory
+            .appendingPathComponent("husk-apk-\(app.bundleIdentifier).apk")
+        apkDownloader = HuskDownloader(url: url, destination: staged,
+            progress: { [weak self] got, total in
+                Task { @MainActor in
+                    if total > 0 {
+                        self?.downloadProgress[app.bundleIdentifier] = Double(got) / Double(total)
+                    }
                 }
-                let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                let downloadDir = docs.appendingPathComponent("Downloaded_APKs")
-                try? FileManager.default.createDirectory(at: downloadDir, withIntermediateDirectories: true, attributes: nil)
-                let dest = downloadDir.appendingPathComponent("\(app.bundleIdentifier)-\(app.version).apk")
-                try? FileManager.default.removeItem(at: dest)
-                if (try? FileManager.default.moveItem(at: localURL, to: dest)) != nil {
-                    AndroidHost.shared.install([dest])
+            },
+            completion: { [weak self] result in
+                Task { @MainActor in
+                    self?.apkDownloader = nil
+                    self?.downloadProgress.removeValue(forKey: app.bundleIdentifier)
+                    switch result {
+                    case .success(let staged):
+                        try? FileManager.default.removeItem(at: dest)
+                        if (try? FileManager.default.moveItem(at: staged, to: dest)) != nil {
+                            AndroidHost.shared.install([dest])
+                        }
+                    case .failure(let why):
+                        HuskLog.log("sources", "Download failed: \(why.localizedDescription)")
+                    }
                 }
-            }
-        }
-        task.progress.observe(\.fractionCompleted) { progress, _ in
-            Task { @MainActor in self.downloadProgress[app.bundleIdentifier] = progress.fractionCompleted }
-        }
-        task.resume()
+            })
+        apkDownloader?.start()
     }
+
+    /// One chunked downloader per app download, held so the session outlives the call.
+    private var apkDownloader: HuskDownloader?
 }

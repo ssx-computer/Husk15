@@ -115,6 +115,7 @@
 		0EC1E9FBD9A5014FB1AA9334 /* husk-tl-sdl.c in Sources */ = {isa = PBXBuildFile; fileRef = C48A155D03D70E7DC8411ED5 /* husk-tl-sdl.c */; };
 		3FFF24EF3C18B086F2D0B97C /* husk-tl-vulkan.m in Sources */ = {isa = PBXBuildFile; fileRef = 42A3D0C796971935D477F89B /* husk-tl-vulkan.m */; };
 		7FA5D73DC2780CACC7399534 /* BundleUnpacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E37298010F80517A3057579E /* BundleUnpacker.swift */; };
+		B8B6342556FABA252E2E9813 /* HuskDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9281505C73CA50A9F9B9EA /* HuskDownloader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -215,6 +216,7 @@
 		5EB0AF32D5E40E753DDD85DA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		CA115F4BEE301033CE335A4C /* Compatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Compatibility.swift; sourceTree = "<group>"; };
 		6146DAE69D6D6462FB1FB771 /* HuskFilePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuskFilePicker.swift; sourceTree = "<group>"; };
+		AA9281505C73CA50A9F9B9EA /* HuskDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuskDownloader.swift; sourceTree = "<group>"; };
 		619394B1069242D8750E7F33 /* Husk.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Husk.entitlements; sourceTree = "<group>"; };
 		66DDBC0AF7BE5742AA867515 /* TLScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TLScreenView.swift; sourceTree = "<group>"; };
 		690B2DA647B7B75C11DDDA9F /* HuskBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HuskBridge.h; sourceTree = "<group>"; };
@@ -336,6 +338,7 @@
 				690B2DA647B7B75C11DDDA9F /* HuskBridge.h */,
 				0168E1B352FFD7A4BC207CA5 /* HuskBridgeFS.swift */,
 				6146DAE69D6D6462FB1FB771 /* HuskFilePicker.swift */,
+				AA9281505C73CA50A9F9B9EA /* HuskDownloader.swift */,
 				FE13DC571D193621CD6149EA /* HuskGamepad.swift */,
 				F337AAF2A6860FCB03810AA6 /* HuskGLView.swift */,
 				392BE39CE162757FDA225452 /* HuskKeyboard.swift */,
@@ -698,6 +701,7 @@
 				8C743346878007F8D22CEA0A /* AppSource.swift in Sources */,
 				853E83FF7FF5B9A7FDE5E638 /* BootScreen.swift in Sources */,
 				7FA5D73DC2780CACC7399534 /* BundleUnpacker.swift in Sources */,
+				B8B6342556FABA252E2E9813 /* HuskDownloader.swift in Sources */,
 				4E1329C07A116B3BE1FDFA7A /* ContentView.swift in Sources */,
 				EBDBC46EF4E65E1DA2342F6B /* DiscoverTab.swift in Sources */,
 				48E699E0016694F530355275 /* FilesTab.swift in Sources */,

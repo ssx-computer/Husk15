@@ -268,6 +268,9 @@ final class GuestImage: ObservableObject {
     nonisolated var firmwarePath: String { documents.appendingPathComponent("edk2-aarch64-code.fd").path }
 
     private var task: URLSessionDownloadTask?
+    /// The chunked downloader for the guest image, in place of the single
+    /// download task above (which remains for nothing but its type).
+    private var downloader: HuskDownloader?
 
     /// Bump whenever the set or order of virtio devices in the Phase 1 command
     /// line changes. Any change renumbers the PCI bus and invalidates recorded
@@ -478,15 +481,40 @@ final class GuestImage: ObservableObject {
     func download() {
         if case .downloading = state { return }
         state = .downloading(progress: 0, received: 0, total: 0)
-        HuskLog.log("guest", "downloading guest image from \(Self.imageURL.absoluteString)")
-
-        let delegate = DownloadDelegate(owner: self)
-        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
         // The manifest names the file, so publishing a new image needs no new
         // app build. The constant is only the fallback for a first run that
         // could not reach the release.
-        task = session.downloadTask(with: manifest?.imageURL ?? Self.imageURL)
-        task?.resume()
+        let url = manifest?.imageURL ?? Self.imageURL
+        HuskLog.log("guest", "downloading guest image from \(url.absoluteString)")
+
+        let staged = FileManager.default.temporaryDirectory
+            .appendingPathComponent("husk-guest-download.qcow2")
+        downloader = HuskDownloader(url: url, destination: staged,
+            progress: { [weak self] got, total in
+                Task { @MainActor in self?.progressed(received: got, total: total) }
+            },
+            completion: { [weak self] result in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.downloader = nil
+                    switch result {
+                    case .success(let staged):
+                        // Hashed after the bytes land, off the main thread: a
+                        // chunked download writes out of order, so the digest
+                        // can only be taken over the finished file. A gigabyte
+                        // of hashing is seconds, and the UI does not wait for it.
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            let digest = DigestWriter.ofFile(at: staged.path)
+                            Task { @MainActor in
+                                self.finished(tempURL: staged, digest: digest)
+                            }
+                        }
+                    case .failure(let why):
+                        self.failed(why.localizedDescription)
+                    }
+                }
+            })
+        downloader?.start()
     }
 
     /// Fetch the pre-booted machine on demand, reporting progress like any other
@@ -736,6 +764,13 @@ final class GuestImage: ObservableObject {
     func cancel() {
         task?.cancel()
         task = nil
+        // The chunked downloader and the snapshot fetcher hold their own
+        // sessions; a cancelled download must tear all of them down, not just
+        // the legacy single-task one.
+        downloader?.cancel()
+        downloader = nil
+        fetcher?.cancel()
+        fetcher = nil
         state = .missing
         HuskLog.log("guest", "download cancelled")
     }
@@ -886,10 +921,12 @@ private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
 
 /// Downloads the snapshot's parts in order and joins them into one file.
 ///
-/// One part at a time, deliberately. Two gigabytes arriving in parallel would
-/// need both in flight at once, and this runs on a phone that is about to be
-/// asked for another four gigabytes to unpack into.
-private final class SnapshotFetcher: NSObject, URLSessionDownloadDelegate {
+/// One part at a time, deliberately -- this runs on a phone that is about to
+/// be asked for another four gigabytes to unpack into, so the parts do not
+/// arrive alongside each other. Each part itself comes down through
+/// HuskDownloader's chunked connections: a multi-hundred-megabyte part on one
+/// stream is both slower and more fragile than sixteen.
+private final class SnapshotFetcher {
     private let urls: [URL]
     private let onProgress: (Int64, Int64) -> Void
     private let onDone: (Result<Joined, Error>) -> Void
@@ -909,7 +946,8 @@ private final class SnapshotFetcher: NSObject, URLSessionDownloadDelegate {
     /// Bytes belonging to parts already appended, so progress does not restart
     /// at zero every time a part finishes.
     private var bytesDone: Int64 = 0
-    private var session: URLSession!
+    private var downloader: HuskDownloader?
+    private var stopped = false
 
     init(urls: [URL],
          progress: @escaping (Int64, Int64) -> Void,
@@ -917,8 +955,6 @@ private final class SnapshotFetcher: NSObject, URLSessionDownloadDelegate {
         self.urls = urls
         self.onProgress = progress
         self.onDone = completion
-        super.init()
-        session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
     }
 
     func start() {
@@ -927,74 +963,72 @@ private final class SnapshotFetcher: NSObject, URLSessionDownloadDelegate {
         next()
     }
 
+    /// Stop everything and tear the joined file down with it.
+    func cancel() {
+        stopped = true
+        downloader?.cancel()
+        downloader = nil
+        try? FileManager.default.removeItem(at: staged)
+    }
+
     private func next() {
         guard index < urls.count else {
             let size = (try? FileManager.default
                 .attributesOfItem(atPath: staged.path)[.size] as? Int) ?? 0
             let digest = hasher.finish()
-            HuskLog.log("guest", "snapshot download complete (\(size ?? 0) bytes, "
-                               + "sha256 \(digest.prefix(12))…)")
+            HuskLog.log("guest", "snapshot download complete (\(size) bytes, "
+                               + "sha256 \(digest.prefix(12))...)")
             onDone(.success(Joined(url: staged, digest: digest)))
-            session.finishTasksAndInvalidate()
             return
         }
-        HuskLog.log("guest", "fetching snapshot part \(index + 1) of \(urls.count)")
-        session.downloadTask(with: urls[index]).resume()
+        HuskLog.log("guest", "fetching snapshot part \(index + 1) of \(urls.count) "
+                           + "with \(HuskDownloader.threadCount) connections")
+        let partFile = FileManager.default.temporaryDirectory
+            .appendingPathComponent("husk-snapshot-part-\(index)")
+        let partsLeft = Int64(urls.count - index)
+        downloader = HuskDownloader(url: urls[index], destination: partFile,
+            progress: { [weak self] got, _ in
+                guard let self, !self.stopped else { return }
+                // The parts are near enough the same size that the current one
+                // stands in for the rest; the alternative is a HEAD per part
+                // before starting, which buys a smoother bar and nothing else.
+                self.onProgress(self.bytesDone + got, self.bytesDone + got * partsLeft)
+            },
+            completion: { [weak self] result in
+                guard let self, !self.stopped else { return }
+                switch result {
+                case .success(let partFile):
+                    do {
+                        let input = try FileHandle(forReadingFrom: partFile)
+                        defer { try? input.close() }
+                        let output = try FileHandle(forWritingTo: self.staged)
+                        defer { try? output.close() }
+                        try output.seekToEnd()
+                        while let piece = try input.read(upToCount: 4 << 20), !piece.isEmpty {
+                            try output.write(contentsOf: piece)
+                            self.hasher.update(piece)
+                            self.bytesDone += Int64(piece.count)
+                        }
+                    } catch {
+                        self.fail("could not join snapshot part \(index + 1): \(error.localizedDescription)")
+                        return
+                    }
+                    try? FileManager.default.removeItem(at: partFile)
+                    self.index += 1
+                    self.next()
+                case .failure(let why):
+                    self.fail(why.localizedDescription)
+                }
+            })
+        downloader?.start()
     }
 
     private func fail(_ message: String) {
+        stopped = true
+        downloader?.cancel()
+        downloader = nil
         try? FileManager.default.removeItem(at: staged)
-        session.invalidateAndCancel()
         onDone(.failure(NSError(domain: "husk", code: 10,
                                 userInfo: [NSLocalizedDescriptionKey: message])))
-    }
-
-    func urlSession(_ s: URLSession, downloadTask: URLSessionDownloadTask,
-                    didFinishDownloadingTo location: URL) {
-        // A completed exchange is not a successful one: a 404 body lands on disk
-        // looking exactly like the file that was asked for.
-        if let http = downloadTask.response as? HTTPURLResponse,
-           !(200...299).contains(http.statusCode) {
-            fail("HTTP \(http.statusCode) fetching "
-               + (downloadTask.originalRequest?.url?.lastPathComponent ?? "a snapshot part"))
-            return
-        }
-        do {
-            let input = try FileHandle(forReadingFrom: location)
-            defer { try? input.close() }
-            let output = try FileHandle(forWritingTo: staged)
-            defer { try? output.close() }
-            try output.seekToEnd()
-            while let chunk = try input.read(upToCount: 4 << 20), !chunk.isEmpty {
-                output.write(chunk)
-                hasher.update(chunk)
-                bytesDone += Int64(chunk.count)
-            }
-        } catch {
-            fail("could not join snapshot part \(index + 1): \(error.localizedDescription)")
-            return
-        }
-        try? FileManager.default.removeItem(at: location)
-        index += 1
-        next()
-    }
-
-    func urlSession(_ s: URLSession, downloadTask: URLSessionDownloadTask,
-                    didWriteData bytesWritten: Int64,
-                    totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-        // The parts are near enough the same size that one of them stands in for
-        // the rest; the alternative is a HEAD request per part before starting,
-        // which buys a smoother bar and nothing else.
-        let remaining = Int64(urls.count - index - 1)
-        let estimate = totalBytesExpectedToWrite > 0
-            ? bytesDone + totalBytesExpectedToWrite * (remaining + 1)
-            : 0
-        onProgress(bytesDone + totalBytesWritten, estimate)
-    }
-
-    func urlSession(_ s: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        if let error, (error as NSError).code != NSURLErrorCancelled {
-            fail(error.localizedDescription)
-        }
     }
 }

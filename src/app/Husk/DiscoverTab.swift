@@ -259,17 +259,18 @@ struct DiscoverTab: View {
                     Button("Cancel") { newSourceURL = ""; showingAddSource = false }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    // Text.bold() rather than View.bold(): the view form is iOS
+                    // 16+, the text form has been there since iOS 13.
                     Button {
                         let url = newSourceURL
                         newSourceURL = ""
                         showingAddSource = false
                         guard !url.isEmpty, URL(string: url) != nil else { return }
                         Task { await manager.addSource(urlString: url) }
+                    } label: {
+                        Text("Add").bold()
                     }
                     .disabled(newSourceURL.isEmpty)
-                    // Text.bold() rather than View.bold(): the view form is iOS
-                    // 16+, the text form has been there since iOS 13.
-                    label: { Text("Add").bold() }
                 }
             }
         }

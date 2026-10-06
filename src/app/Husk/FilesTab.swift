@@ -36,6 +36,9 @@ struct DirectoryView: View {
     let title: String
 
     @ObservedObject private var host = AndroidHost.shared
+    /// Pushed directories ride on the Files tab's stack: appending to `files`
+    /// is the push, on the real NavigationStack and the iOS 15 one alike.
+    @ObservedObject private var router = Router.shared
     @State private var entries: [AndroidHost.GuestEntry] = []
     @State private var space: (free: Int64, total: Int64)?
     @State private var loading = true

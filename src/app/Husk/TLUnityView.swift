@@ -454,7 +454,7 @@ struct TLUnityAttemptView: View {
             }
         }
         // Swipes near the edges are the game's: keep the system from taking them for itself.
-        .defersSystemGestures(on: .all)
+        .huskDefersSystemGestures()
         .onAppear { model.start() }
         .onDisappear { model.stop() }
     }
@@ -521,7 +521,7 @@ struct TLCocosAttemptView: View {
         .huskStatusBarHidden()
         .huskPersistentOverlaysHidden()
         // Swipes near the edges are the game's.
-        .defersSystemGestures(on: .all)
+        .huskDefersSystemGestures()
         .onAppear { HuskOrientation.set(.landscape); model.start() }
         .onDisappear { model.stop(); HuskOrientation.set(HuskOrientation.standard) }
     }

@@ -63,7 +63,12 @@ struct HuskNavPathStack<Dest: Hashable, Root: View, Leaf: View>: View {
                 root()
                 ForEach(Array(path.enumerated()), id: \.element) { _, dest in
                     leaf(dest)
-                        .transition(Self.pushPop)
+                        // Sliding in from the trailing edge, the way a navigation
+                        // push moves. Inlined rather than a static of the generic
+                        // type: Swift does not allow stored statics in one.
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .trailing).combined(with: .opacity)))
                         // The close button a leaf would have put in the
                         // navigation bar. Only on the manual stack: on iOS 16+
                         // the leaf draws its own toolbar button.
@@ -88,11 +93,6 @@ struct HuskNavPathStack<Dest: Hashable, Root: View, Leaf: View>: View {
             .animation(.easeInOut(duration: 0.28), value: path)
         }
     }
-
-    /// Sliding in from the trailing edge, the way a navigation push moves.
-    static let pushPop = AnyTransition
-        .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .trailing).combined(with: .opacity))
 }
 
 extension Animation {
@@ -159,6 +159,21 @@ extension View {
     func huskScrollBackgroundHidden() -> some View {
         if #available(iOS 16.0, *) {
             self.scrollContentBackground(.hidden)
+        } else {
+            self
+        }
+    }
+
+    /// Asks the system to leave the screen's edge gestures to the view -- the
+    /// edges of a full-screen game belong to the game, not to Control Centre.
+    /// `.defersSystemGestures(on:)` is iOS 16+ (it reads the same name on the
+    /// UIKit view property it drives, but the view modifier is 16); iOS 15 has
+    /// no per-view way to reach it, so the gestures behave as the system's
+    /// default there.
+    @ViewBuilder
+    func huskDefersSystemGestures() -> some View {
+        if #available(iOS 16.0, *) {
+            self.defersSystemGestures(on: .all)
         } else {
             self
         }

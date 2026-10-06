@@ -26,21 +26,24 @@ struct LibraryTab: View {
     private let columns = [GridItem(.adaptive(minimum: 100), spacing: 12)]
 
     var body: some View {
-        NavigationStack(path: $router.library) {
+        // A value-driven stack, the same way FilesTab navigates: on iOS 16+
+        // the NavigationStack it was written against, on iOS 15 a hand-rolled
+        // stack driven by the same `path` binding.
+        HuskNavPathStack(path: $router.library) {
             ZStack {
                 Theme.backdrop
                 content
             }
             .navigationBarHidden(true)
-            .toolbar(.hidden, for: .tabBar)
-            .navigationDestination(for: AndroidHost.Package.self) { app in
-                AppDetailView(app: app, onOpenGuest: onOpenGuest)
-            }
+            .huskToolbarHiddenTabBar()
             .huskFilePicker(isPresented: $importing) { urls in
                 HuskLog.log("ui", "importing \(urls.count) file(s): "
                           + urls.map(\.lastPathComponent).joined(separator: ", "))
                 host.install(urls)
             }
+        } leaf: { app in
+            AppDetailView(app: app, onOpenGuest: onOpenGuest,
+                          onBack: { router.library.removeLast() })
         }
     }
 
@@ -75,7 +78,13 @@ struct LibraryTab: View {
                 if !shown.isEmpty {
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(shown) { app in
-                            NavigationLink(value: app) {
+                            // A button that appends to the path, not a
+                            // NavigationLink(value:): that form is iOS 16+,
+                            // and appending to the stack's path is the push on
+                            // both the real NavigationStack and the iOS 15 one.
+                            Button {
+                                router.library.append(app)
+                            } label: {
                                 AppCard(app: app, dimmed: !host.isReady)
                             }
                             .buttonStyle(CardButtonStyle())

@@ -14,7 +14,7 @@ struct SettingsTab: View {
     @State private var searching = false
 
     var body: some View {
-        NavigationStack {
+        HuskNavStack {
             ZStack {
                 Theme.backdrop
                 ScrollView {
@@ -82,7 +82,7 @@ struct SettingsTab: View {
                 }
             }
             .navigationBarHidden(true)
-            .toolbar(.hidden, for: .tabBar)
+            .huskToolbarHiddenTabBar()
         }
     }
 
@@ -111,7 +111,7 @@ struct SettingsTab: View {
 private struct HuskForm: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .scrollContentBackground(.hidden)
+            .huskScrollBackgroundHidden()
             .background(Theme.backdrop)
             .tint(Theme.accent)
             .navigationBarTitleDisplayMode(.inline)

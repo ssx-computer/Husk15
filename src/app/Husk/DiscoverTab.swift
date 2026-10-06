@@ -11,7 +11,7 @@ struct DiscoverTab: View {
     @State private var debouncedSearchText = ""
 
     var body: some View {
-        NavigationStack {
+        HuskNavStack {
             ZStack {
                 Theme.backdrop
 
@@ -53,7 +53,7 @@ struct DiscoverTab: View {
             .navigationTitle("Discover")
             .searchable(text: $searchText, prompt: "Search \(totalAppCount) apps...")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 14) {
                         Button { Task { await manager.fetchSources() } } label: {
                             Image(systemName: "arrow.clockwise")
@@ -212,7 +212,7 @@ struct DiscoverTab: View {
     // MARK: - Add Source Sheet
 
     private var addSourceSheet: some View {
-        NavigationStack {
+        HuskNavStack {
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Source URL")
@@ -255,11 +255,11 @@ struct DiscoverTab: View {
             .background(Theme.backdrop.ignoresSafeArea())
             .navigationTitle("Add Source")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { newSourceURL = ""; showingAddSource = false }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Add") {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
                         let url = newSourceURL
                         newSourceURL = ""
                         showingAddSource = false
@@ -267,7 +267,9 @@ struct DiscoverTab: View {
                         Task { await manager.addSource(urlString: url) }
                     }
                     .disabled(newSourceURL.isEmpty)
-                    .bold()
+                    // Text.bold() rather than View.bold(): the view form is iOS
+                    // 16+, the text form has been there since iOS 13.
+                    label: { Text("Add").bold() }
                 }
             }
         }
@@ -276,7 +278,7 @@ struct DiscoverTab: View {
     // MARK: - Manage Sources Sheet
 
     private var sourcesSheet: some View {
-        NavigationStack {
+        HuskNavStack {
             List {
                 Section("Active Repositories") {
                     ForEach(manager.sourceURLs, id: \.self) { url in
@@ -294,10 +296,10 @@ struct DiscoverTab: View {
             }
             .navigationTitle("Repositories")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") { showingSources = false }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button { showingSources = false; showingAddSource = true } label: {
                         Image(systemName: "plus")
                     }

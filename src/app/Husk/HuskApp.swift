@@ -11,10 +11,20 @@ enum HuskOrientation {
     @MainActor static func set(_ new: UIInterfaceOrientationMask) {
         mask = new
         for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
-            var vc = scene.keyWindow?.rootViewController
-            while let v = vc { v.setNeedsUpdateOfSupportedInterfaceOrientations(); vc = v.presentedViewController }
-            scene.requestGeometryUpdate(.iOS(interfaceOrientations: new)) { error in
-                HuskLog.log("ui", "orientation change refused: \(error.localizedDescription)")
+            if #available(iOS 16.0, *) {
+                var vc = scene.keyWindow?.rootViewController
+                while let v = vc {
+                    v.setNeedsUpdateOfSupportedInterfaceOrientations()
+                    vc = v.presentedViewController
+                }
+                scene.requestGeometryUpdate(.iOS(interfaceOrientations: new)) { error in
+                    HuskLog.log("ui", "orientation change refused: \(error.localizedDescription)")
+                }
+            } else {
+                // iOS 15 has neither per-VC updates nor the geometry request;
+                // asking UIKit to redo its rotation decision is all there is.
+                // Deprecated on iOS 16, but this arm only runs below it.
+                UIViewController.attemptRotationToDeviceOrientation()
             }
         }
     }

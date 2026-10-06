@@ -102,6 +102,12 @@ enum Theme {
     /// colours are dynamic, so the bars follow the appearance without being
     /// set again.
     static func applyBarAppearance() {
+        // The system's tab bar is hidden on every version: the design has the
+        // drawn HuskTabBar instead, inset under ContentView's TabView. iOS 16+
+        // hides it per-view with .toolbar(_:for:), but iOS 15 has no way to
+        // reach the bar from a view, so the appearance does it globally.
+        UITabBar.appearance().isHidden = true
+
         let tab = UITabBarAppearance()
         tab.configureWithOpaqueBackground()
         tab.backgroundColor = bgUI

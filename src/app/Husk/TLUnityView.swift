@@ -355,7 +355,7 @@ struct TLUnityAttemptView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        HuskNavStack {
             VStack(spacing: 0) {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
@@ -383,7 +383,7 @@ struct TLUnityAttemptView: View {
                 if devInfo {
                 HStack(spacing: 10) {
                     Button {
-                        withAnimation(.snappy(duration: 0.25)) { showLog.toggle() }
+                        withAnimation(.huskSnappy(duration: 0.25)) { showLog.toggle() }
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: showLog ? "chevron.down" : "chevron.right")
@@ -410,7 +410,7 @@ struct TLUnityAttemptView: View {
                 .padding(.vertical, 8)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    if !showLog { withAnimation(.snappy(duration: 0.25)) { showLog = true } }
+                    if !showLog { withAnimation(.huskSnappy(duration: 0.25)) { showLog = true } }
                 }
 
                 }
@@ -498,8 +498,8 @@ struct TLCocosAttemptView: View {
                 }
             }
         }
-        .statusBarHidden(true)
-        .persistentSystemOverlays(.hidden)
+        .huskStatusBarHidden()
+        .huskPersistentOverlaysHidden()
         // Swipes near the edges are the game's.
         .defersSystemGestures(on: .all)
         .onAppear { HuskOrientation.set(.landscape); model.start() }
@@ -524,7 +524,7 @@ struct TLCocosAttemptView: View {
                 Text(stats).font(.technical(11)).foregroundStyle(.white.opacity(0.7)).lineLimit(1)
             }
             if devInfo {
-                Button { withAnimation(.snappy(duration: 0.25)) { showLog.toggle() } } label: {
+                Button { withAnimation(.huskSnappy(duration: 0.25)) { showLog.toggle() } } label: {
                     Text(showLog ? "Hide log" : "Log").font(.system(size: 12, weight: .semibold))
                 }
                 .tint(.white)

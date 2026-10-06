@@ -20,18 +20,21 @@ struct JITSetupFlow: View {
     private var device: String { OnDevicePairing.deviceKind }
 
     var body: some View {
-        NavigationStack(path: $path) {
+        // A value-driven stack. On iOS 16+ this is the NavigationStack it was
+        // written against; on iOS 15 the stack is rendered by hand from the
+        // same `path` binding, and the manualClose covers what the real
+        // navigation bar's Close button would have been.
+        HuskNavPathStack(path: $path, manualClose: { close() }) {
             choose
-                .navigationDestination(for: Step.self) { step in
-                    switch step {
-                    case .pairOnDevice: pairOnDevice
-                    case .importFile: importFile
-                    case .connect: connect
-                    case .enable: enable
-                    case .stikDebug: stikDebug
-                    case .trollStore: trollStore
-                    }
-                }
+        } leaf: { step in
+            switch step {
+            case .pairOnDevice: pairOnDevice
+            case .importFile: importFile
+            case .connect: connect
+            case .enable: enable
+            case .stikDebug: stikDebug
+            case .trollStore: trollStore
+            }
         }
         .tint(Theme.accent)
         .fileImporter(isPresented: $importing, allowedContentTypes: [.propertyList, .data]) { result in

@@ -16,13 +16,16 @@ struct FilesTab: View {
     @ObservedObject private var router = Router.shared
 
     var body: some View {
-        NavigationStack(path: $router.files) {
+        // A value-driven stack. On iOS 16+ this is the NavigationStack it was
+        // written against; on iOS 15 the stack is rendered by hand from the
+        // same `path` binding, and appending to it is the push on both.
+        HuskNavPathStack(path: $router.files) {
             DirectoryView(path: Self.root, title: "Files")
-                .navigationDestination(for: String.self) { path in
-                    DirectoryView(path: path,
-                                  title: (path as NSString).lastPathComponent)
-                        .toolbar(.hidden, for: .tabBar)
-                }
+        } leaf: { path in
+            DirectoryView(path: path,
+                          title: (path as NSString).lastPathComponent,
+                          onBack: { router.files.removeLast() })
+                .huskToolbarHiddenTabBar()
         }
     }
 }
@@ -40,7 +43,9 @@ struct DirectoryView: View {
     @State private var importing = false
     @State private var showImportSheet = false
     @State private var installing: AndroidHost.GuestEntry?
-    @Environment(\.dismiss) private var dismiss
+    /// Pops the stack the pushed view sits on. The root passes nil: it has
+    /// nothing to go back to.
+    var onBack: (() -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -50,7 +55,7 @@ struct DirectoryView: View {
         .navigationBarHidden(true)
         .sheet(isPresented: $showImportSheet) {
             ImportSheet(destination: path) { showImportSheet = false; importing = true }
-                .presentationDetents([.height(320)])
+                .huskSheetHeight(320)
         }
         .huskFilePicker(isPresented: $importing) { urls in
             host.sendFiles(urls, to: path)
@@ -74,7 +79,7 @@ struct DirectoryView: View {
     @ViewBuilder private var content: some View {
         ScrollView {
             VStack(spacing: 14) {
-                HuskHeader(back: path == FilesTab.root ? nil : { dismiss() },
+                HuskHeader(back: path == FilesTab.root ? nil : onBack,
                            title: title) {
                     HStack(spacing: 10) {
                         CircleButton(systemImage: "arrow.clockwise") { load() }
@@ -120,7 +125,12 @@ struct DirectoryView: View {
 
     @ViewBuilder private func row(_ e: AndroidHost.GuestEntry) -> some View {
         if e.isDirectory {
-            NavigationLink(value: e.path) {
+            // A button that appends to the path, not a NavigationLink(value:):
+            // that form is iOS 16+, and appending to the stack's path is the
+            // push on both the real NavigationStack and the iOS 15 one.
+            Button {
+                router.files.append(e.path)
+            } label: {
                 HuskRow(systemImage: "folder.fill", title: e.name,
                         subtitle: e.modified.map(Self.when))
             }

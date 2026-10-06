@@ -2,12 +2,10 @@ name: Husk
 options:
   bundleIdPrefix: com.husk
   deploymentTarget:
-    # 16.4, matching every IPA shipped so far and the -target iOS 16.0 the
-    # dylib is built with. project.yml said 17.0 while the checked-in .pbxproj
-    # said 16.4, and since nothing regenerated the project it was the .pbxproj
-    # that shipped. Regenerating it would otherwise have raised the floor for
-    # everyone as a side effect of adding one source file.
-    iOS: "16.4"
+    # 15.0, the floor this fork targets. Upstream shipped 16.4 / 17.0; the
+    # diverged UI APIs those need are all behind the helpers in
+    # Compatibility.swift, so the same sources build on both.
+    iOS: "15.0"
   createIntermediateGroups: true
 
 settings:

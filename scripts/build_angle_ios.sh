@@ -41,10 +41,14 @@ cd "$WK/Source/ThirdParty/ANGLE"
 # Clearing the flag drops the overlay -- which then surfaces the errors it was
 # hiding, all of the form "MTLPixelFormatBC1_RGBA is only available on iOS
 # 16.4". Hence the deployment target: 16.4 is the version those annotations
-# actually ask for, so they are satisfied honestly rather than suppressed. It
-# was 17.0 while Husk itself required 17.0; Husk now deploys to 16.4, and
-# building ANGLE any higher than the app produces a dylib dyld refuses to load
-# on the oldest supported OS.
+# actually ask for, so they are satisfied honestly rather than suppressed.
+#
+# Husk itself now deploys to iOS 15, but ANGLE stays at 16.4: those pixel
+# format annotations cannot be lowered, and a dylib built for 16.4 cannot be
+# loaded on iOS 15. That is survivable precisely because nothing links
+# ANGLE -- the QEMU dylib dlopens it at GL start-up, so on iOS 15 the dlopen
+# fails, GL reports FAILED, and QemuRunner falls back to the software display.
+# A linked library would have made the whole app fail to launch instead.
 ALIASES="$GPU/angle-aliases.txt"
 
 angle_build () {

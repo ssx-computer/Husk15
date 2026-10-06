@@ -76,7 +76,7 @@ struct ContentView: View {
                 }
                 .task(id: toast.id) {
                     try? await Task.sleep(nanoseconds: 4_500_000_000)
-                    withAnimation(.snappy) {
+                    withAnimation(.huskSnappy) {
                         if host.toast?.id == toast.id { host.toast = nil }
                     }
                 }
@@ -113,8 +113,8 @@ struct ContentView: View {
         // window rather than with .preferredColorScheme — see Theme.apply.
         .onAppear { Theme.apply(appearance) }
         .onChange(of: appearance) { Theme.apply($0) }
-        .animation(.snappy(duration: 0.22), value: showGuestScreen)
-        .animation(.snappy(duration: 0.25), value: host.toast)
+        .animation(.huskSnappy(duration: 0.22), value: showGuestScreen)
+        .animation(.huskSnappy(duration: 0.25), value: host.toast)
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
                 showOnboarding = false
@@ -416,11 +416,11 @@ struct GuestScreenView: View {
         // On the screen rather than the button: the chrome can hide while the
         // document picker is up, and an importer attached to a view that goes
         // away goes away with it.
-        .statusBarHidden(true)
-        .persistentSystemOverlays(.hidden)
+        .huskStatusBarHidden()
+        .huskPersistentOverlaysHidden()
         .sheet(isPresented: $showControls) {
             ControlsSheet(keyboard: $keyboard)
-                .presentationDetents([.height(300)])
+                .huskSheetHeight(300)
         }
     }
 }
@@ -615,7 +615,7 @@ struct LogView: View {
     private let tick = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        NavigationStack {
+        HuskNavStack {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 1) {

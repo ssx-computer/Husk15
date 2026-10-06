@@ -26,10 +26,13 @@ import SwiftUI
 struct AppDetailView: View {
     let app: AndroidHost.Package
     let onOpenGuest: () -> Void
+    /// Pops the stack this page was pushed on. Explicit rather than
+    /// `Environment(\.dismiss)`: on iOS 15 the hand-rolled stack has no
+    /// navigation to dismiss from, so the caller owns the way out.
+    let onBack: () -> Void
 
     @ObservedObject private var host = AndroidHost.shared
     @ObservedObject private var router = Router.shared
-    @Environment(\.dismiss) private var dismiss
     @State private var confirmUninstall = false
 
     private var live: AndroidHost.Package {
@@ -42,7 +45,7 @@ struct AppDetailView: View {
             Theme.backdrop
             ScrollView {
                 VStack(spacing: 18) {
-                    HuskHeader(back: { dismiss() }) { menu }
+                    HuskHeader(back: onBack) { menu }
                     header
                     launch
                     facts
@@ -58,7 +61,7 @@ struct AppDetailView: View {
                             titleVisibility: .visible) {
             Button("Uninstall", role: .destructive) {
                 host.uninstall(app.name)
-                dismiss()
+                onBack()
             }
             Button("Cancel", role: .cancel) { }
         } message: {

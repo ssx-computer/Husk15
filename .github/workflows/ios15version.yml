@@ -1,0 +1,59 @@
+name: ios15version
+
+# Builds the iOS 15 deployment of Husk to an unsigned IPA.
+#
+# scripts/ci_build.sh does everything from a clean checkout, in order: the
+# QEMU dependencies (a couple of hours the first time), ANGLE, QEMU itself,
+# the guest image, the pairing crate, then the app and its IPA. The build
+# tree is cached between runs -- its inputs are the scripts that generate it,
+# so the cache key is their combined hash, and a change to any of them (for
+# instance the deployment target in build_ios.sh) starts a fresh build.
+#
+# Unsigned is deliberate: AltStore / SideStore / TrollStore re-sign at
+# install, so the same artifact works for anyone. See package_ipa.sh for the
+# bundle validation that runs before anything is zipped.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ipa:
+    name: Build Husk.ipa (iOS 15)
+    runs-on: macos-latest
+    timeout-minutes: 350
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # package_ipa.sh regenerates Husk.xcodeproj from project.yml when
+      # xcodegen is present, and uses the checked-in project as-is when not.
+      # Regenerating is the point: project.yml globs src/app/Husk, so the
+      # checked-in .pbxproj can go stale against it.
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      # QEMU and its dependencies are the hours-long part. Cache the whole
+      # build tree -- the sysroot, the built dependencies, and QEMU's own
+      # objects. Sources land in third_party/sources, which is cheap to
+      # re-download and is keyed by nothing the scripts change.
+      - name: Cache QEMU and dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/
+            third_party/build/
+          key: husk-ios15-deps-${{ runner.os }}-${{ hashFiles('scripts/build_ios.sh', 'scripts/build_angle_ios.sh', 'scripts/build_gpu_ios.sh', 'scripts/integrate_husk.sh', 'scripts/ci_build.sh', 'scripts/sources.sh') }}
+          restore-keys: |
+            husk-ios15-deps-${{ runner.os }}-
+
+      - name: Build QEMU, dependencies, and the app
+        run: ./scripts/ci_build.sh "$GITHUB_WORKSPACE/Husk.ipa"
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Husk-ipa-ios15
+          path: Husk.ipa
+          if-no-files-found: error

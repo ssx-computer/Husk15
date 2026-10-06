@@ -19,7 +19,10 @@ mkdir -p "$PREFIX" "$LOGS" "$STAMPS"
 
 ARCH=arm64
 SDK=iphoneos
-SDKMINVER="${SDKMINVER:-16.0}"
+# Must not exceed the app's MinimumOSVersion: this dylib is linked, not
+# dlopened, and dyld refuses a library built for a newer OS than the process.
+# ANGLE, which is dlopened, keeps 16.4 -- see build_angle_ios.sh.
+SDKMINVER="${SDKMINVER:-15.0}"
 NCPU="$(sysctl -n hw.ncpu)"
 
 SDKROOT="$(xcrun --sdk $SDK --show-sdk-path)"

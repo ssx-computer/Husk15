@@ -419,7 +419,7 @@ struct NetworkSettings: View {
             Section {
                 Text("Android 通过 QEMU 自己网络上的虚拟网卡访问互联网。"
                    + "你手机网络上的任何东西都看不到客户机，"
-                   + "客户机也看不到它们。"
+                   + "客户机也看不到它们。")
                     .font(.footnote).foregroundStyle(.secondary)
             } header: {
                 Text("连接方式")

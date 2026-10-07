@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 /// Routes between the four things Husk can be doing.
 ///
@@ -436,6 +437,7 @@ struct SetupView: View {
 
     @State private var profile: QemuRunner.Profile = .phase1Android
     @State private var showSettings = false
+    @State private var importingImage = false
 
     var body: some View {
         ZStack {
@@ -478,6 +480,10 @@ struct SetupView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsTab()
+        }
+        .huskFilePicker(isPresented: $importingImage,
+                        types: [UTType(filenameExtension: "qcow2") ?? .data, .data]) { urls in
+            if let first = urls.first { guest.importImage(at: first) }
         }
     }
 
@@ -539,6 +545,12 @@ struct SetupView: View {
                         guest.download()
                     }
                         .buttonStyle(.borderedProminent)
+                    // The release CDN is unreachable from some networks
+                    // entirely; a manual copy is the way in for them. Download
+                    // it on a computer with whatever tool the network allows,
+                    // AirDrop or Files it over, then bring it in here.
+                    Button("从文件导入") { importingImage = true }
+                        .font(.footnote)
                 }
             case .ready:
                 // Unreachable: SetupView is mounted only while there is no

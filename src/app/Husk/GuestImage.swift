@@ -67,8 +67,18 @@ final class GuestImage: ObservableObject {
     private static let userdataSeedVersion = "v10"
 
     /// Whether to fetch the pre-booted snapshot rather than boot from cold.
+    ///
+    /// An explicit choice wins. The default is measured from the device: the
+    /// snapshot restores a 4096 MiB machine, and QEMU needs the guest RAM plus
+    /// its own overhead plus the JIT on top of that -- below 6 GB of physical
+    /// RAM a restore is a jetsam kill, not a boot. A 2 GB device that let the
+    /// default stand downloaded two gigabytes and then crashed; the default
+    /// now says no for them, and 4 GB devices get a 2560 MiB cold boot instead.
     static var wantsSnapshot: Bool {
-        UserDefaults.standard.object(forKey: "husk.downloadSnapshot") as? Bool ?? true
+        if let stored = UserDefaults.standard.object(forKey: "husk.downloadSnapshot") as? Bool {
+            return stored
+        }
+        return ProcessInfo.processInfo.physicalMemory >= 6 * 1024 * 1024 * 1024
     }
 
     /// A machine that has already finished booting, gzipped.
@@ -574,8 +584,66 @@ final class GuestImage: ObservableObject {
         fetcher?.start()
     }
 
-    /// Held so the fetcher -- and the URLSession it owns -- outlives this call.
+    /// Held so the fetcher -- and the downloader it owns -- outlives this call.
     private var fetcher: SnapshotFetcher?
+
+    /// Bring a guest image in from outside the download: a file picked or
+    /// AirDropped to this iPhone.
+    ///
+    /// GitHub's release CDN is unreachable from some networks entirely, and a
+    /// manual copy is the way in for them: download it on a computer with
+    /// whatever tool the network allows, hand it over, and import it here. The
+    /// validation is the same one a download passes through, so a file that is
+    /// not the guest disk is rejected rather than installed.
+    func importImage(at url: URL) {
+        if case .downloading = state { return }
+        state = .installing
+        HuskLog.log("guest", "importing guest image from \(url.lastPathComponent)")
+        DispatchQueue.global(qos: .userInitiated).async {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            do {
+                let check = Self.validate(path: url.path)
+                if let why = check.problem {
+                    DispatchQueue.main.async {
+                        self.state = .failed("选中的文件不是可用的磁盘映像：\(why)")
+                    }
+                    return
+                }
+                let dest = URL(fileURLWithPath: self.diskPath)
+                try? FileManager.default.removeItem(at: dest)
+                // Copied, not moved: the source may be the Files app's copy, and
+                // deleting it would reach into someone else's storage.
+                try FileManager.default.copyItem(at: url, to: dest)
+                try? Self.imageVersion.write(toFile: self.versionStampPath,
+                                             atomically: true, encoding: .utf8)
+                HuskLog.log("guest", "guest image imported (\(check.size ?? 0) bytes)")
+                DispatchQueue.main.async {
+                    // The same tail a download has: the snapshot, when wanted,
+                    // follows the image rather than arriving alongside it.
+                    if Self.wantsSnapshot, !self.hasShippedSnapshot {
+                        self.state = .installing
+                        self.downloadSnapshot { ok in
+                            DispatchQueue.main.async {
+                                if ok {
+                                    try? Self.imageVersion.write(
+                                        toFile: self.snapshotStampPath,
+                                        atomically: true, encoding: .utf8)
+                                }
+                                self.state = .ready
+                            }
+                        }
+                    } else {
+                        self.state = .ready
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.state = .failed("导入失败：\(error.localizedDescription)")
+                }
+            }
+        }
+    }
 
     /// Unpack a downloaded snapshot over userdata.
     fileprivate func finishedSnapshot(tempURL: URL, digest: String?) {

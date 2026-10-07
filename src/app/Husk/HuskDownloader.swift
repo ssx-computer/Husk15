@@ -65,6 +65,10 @@ final class HuskDownloader: NSObject, URLSessionDataDelegate {
     func start() {
         let cfg = URLSessionConfiguration.default
         cfg.requestCachePolicy = .reloadIgnoringLocalCacheData
+        // The system defaults to six connections per host: without this the
+        // sixteen chunks queue ten deep and the download is a six-thread one
+        // wearing a sixteen-thread name.
+        cfg.httpMaximumConnectionsPerHost = Self.threadCount
         session = URLSession(configuration: cfg, delegate: self, delegateQueue: nil)
 
         // The size decides the chunking, and Accept-Ranges decides whether

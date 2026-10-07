@@ -534,7 +534,7 @@ struct SetupView: View {
                 }
             case .missing:
                 VStack(spacing: 12) {
-                    Text("Husk 需要它的 Android 运行时——约 760 MB。Android 本体随后由运行时自行下载。")
+                    Text("Husk 需要它的 Android 运行时——约 2 GB。Android 本体随后由运行时自行下载。")
                         .font(.callout).foregroundStyle(.secondary)
                         .multilineTextAlignment(.center).padding(.horizontal, 36)
                     Button("下载 Android 运行时") {

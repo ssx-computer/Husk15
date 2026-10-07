@@ -99,7 +99,7 @@ final class GuestImage: ObservableObject {
     static var snapshotPartURLs: [URL] {
         (0..<snapshotPartCount).map { i in
             URL(string: "https://github.com/Leviidev/Husk/releases/download/"
-                      + "\(dependenciesTag)/vdb-snapshot-\(imageVersion).qcow2.gz."
+                      + "\(dependenciesTag)/vdb-snapshot-v10.qcow2.gz."
                       + String(format: "%02d", i))!
         }
     }

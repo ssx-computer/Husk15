@@ -596,11 +596,15 @@ final class GuestImage: ObservableObject {
     /// validation is the same one a download passes through, so a file that is
     /// not the guest disk is rejected rather than installed.
     func importImage(at url: URL) {
-        if case .downloading = state { return }
+        // A download still running is not a reason to refuse the import: the
+        // user has decided. Cancel it and take over. The scope is taken on the
+        // picker's callback thread, before anything can tear the grant down.
+        if case .downloading = state { cancel() }
+        if case .installing = state { return }
+        let scoped = url.startAccessingSecurityScopedResource()
         state = .installing
         HuskLog.log("guest", "importing guest image from \(url.lastPathComponent)")
         DispatchQueue.global(qos: .userInitiated).async {
-            let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             do {
                 let check = Self.validate(path: url.path)

@@ -524,7 +524,7 @@ struct SetupView: View {
                     Button("取消") { guest.cancel() }.font(.footnote)
                 }
             case .installing:
-                VStack(spacing: 10) { ProgressView(); Text("正在安装…").font(.callout) }
+                VStack(spacing: 10) { ProgressView(); Text("正在导入…（约 2 GB，需要一两分钟）").font(.callout).multilineTextAlignment(.center) }
             case .failed(let message):
                 VStack(spacing: 10) {
                     Text("出了点问题").font(.headline).foregroundStyle(.red)

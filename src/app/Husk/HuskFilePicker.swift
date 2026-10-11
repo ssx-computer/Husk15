@@ -15,7 +15,13 @@ enum HuskFilePicker {
 
     static func present(types: [UTType] = [.item], multiple: Bool = true,
                         onPick: @escaping ([URL]) -> Void, onFail: ((String) -> Void)? = nil) {
-        guard live == nil else { return }
+        guard live == nil else {
+            // A coordinator that never finished (a picker torn down without a
+            // delegate callback) would swallow every later tap as silence.
+            live = nil
+            onFail?("上一次文件选择没有结束，已重置。请再试一次。")
+            return
+        }
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: false)
         picker.allowsMultipleSelection = multiple
         let coordinator = Coordinator(onPick: onPick)
